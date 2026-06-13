@@ -57,6 +57,11 @@ func (m LayoutModel) SetSidebar(d SidebarData) LayoutModel {
 	return m
 }
 
+func (m LayoutModel) SetPassthrough(b bool) LayoutModel {
+	m.mainPanel = m.mainPanel.SetPassthrough(b)
+	return m
+}
+
 func (m LayoutModel) SetActiveSession(sess agent.Session) (LayoutModel, tea.Cmd) {
 	mp, cmd := m.mainPanel.SetSession(sess)
 	m.mainPanel = mp
@@ -72,6 +77,12 @@ func (m LayoutModel) RemoveSessionView(sessionID string) LayoutModel {
 	return m
 }
 
+func (m LayoutModel) ScrollMainPanel(direction int) (LayoutModel, tea.Cmd) {
+	mp, cmd := m.mainPanel.ScrollTermView(direction)
+	m.mainPanel = mp
+	return m, cmd
+}
+
 func (m LayoutModel) Update(msg tea.Msg) (LayoutModel, tea.Cmd) {
 	var cmd tea.Cmd
 
@@ -83,11 +94,26 @@ func (m LayoutModel) Update(msg tea.Msg) (LayoutModel, tea.Cmd) {
 		return m, cmd
 	}
 
-	switch m.focus {
-	case FocusSidebar:
-		m.sidebar, cmd = m.sidebar.Update(msg)
-	case FocusMain:
+	switch msg := msg.(type) {
+	case tea.MouseMsg:
+		mainW := m.width - m.sidebarW - 1
+		contentW := mainW - 2
+		contentH := m.height - 2
+		adjX := msg.X - m.sidebarW - 2
+		adjY := msg.Y - 1
+		if adjX < 0 || adjX >= contentW || adjY < 0 || adjY >= contentH {
+			return m, nil
+		}
+		msg.X = adjX
+		msg.Y = adjY
 		m.mainPanel, cmd = m.mainPanel.Update(msg)
+	default:
+		switch m.focus {
+		case FocusSidebar:
+			m.sidebar, cmd = m.sidebar.Update(msg)
+		case FocusMain:
+			m.mainPanel, cmd = m.mainPanel.Update(msg)
+		}
 	}
 
 	return m, cmd

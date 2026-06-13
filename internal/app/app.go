@@ -143,8 +143,9 @@ func (m AppModel) syncSidebar() AppModel {
 func (m AppModel) enterPassthrough() AppModel {
 	m.mode = ModePassthrough
 	m.status = m.status.SetMode("PASSTHROUGH")
-	m.status = m.status.SetHints(" ctrl+q: exit")
+	m.status = m.status.SetHints(" ctrl+u/d: scroll  ctrl+q: exit")
 	m.help = m.help.SetBindings(m.keys.PassthroughBindings())
+	m.layout = m.layout.SetPassthrough(true)
 	return m
 }
 
@@ -153,6 +154,7 @@ func (m AppModel) exitToNavigation() AppModel {
 	m.status = m.status.SetMode("NORMAL")
 	m.status = m.status.SetHints(" n: new session  e: editor  g: lazygit  q: quit")
 	m.help = m.help.SetBindings(m.keys.NavigationBindings())
+	m.layout = m.layout.SetPassthrough(false)
 	return m
 }
 
@@ -461,6 +463,16 @@ func (m AppModel) updateNavigationMode(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.cursorSec = ui.SectionApps
 		m.cursorIdx = 0
 		return m.syncSidebar(), nil
+
+	case key.Matches(msg, m.keys.PageUp):
+		var scrollCmd tea.Cmd
+		m.layout, scrollCmd = m.layout.ScrollMainPanel(-1)
+		return m, scrollCmd
+
+	case key.Matches(msg, m.keys.PageDown):
+		var scrollCmd tea.Cmd
+		m.layout, scrollCmd = m.layout.ScrollMainPanel(1)
+		return m, scrollCmd
 	}
 
 	var cmd tea.Cmd

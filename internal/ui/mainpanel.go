@@ -17,6 +17,7 @@ type MainPanelModel struct {
 	height     int
 	hasPTY     bool
 	activeSess agent.Session
+	passthrough bool
 }
 
 func NewMainPanelModel() MainPanelModel {
@@ -50,6 +51,14 @@ func (m MainPanelModel) SetFocused(f bool) MainPanelModel {
 	return m
 }
 
+func (m MainPanelModel) SetPassthrough(b bool) MainPanelModel {
+	m.passthrough = b
+	for id, tv := range m.termViews {
+		m.termViews[id] = tv.SetPassthrough(b)
+	}
+	return m
+}
+
 func (m MainPanelModel) SetSession(sess agent.Session) (MainPanelModel, tea.Cmd) {
 	m.activeSess = sess
 	if sess == nil {
@@ -63,6 +72,7 @@ func (m MainPanelModel) SetSession(sess agent.Session) (MainPanelModel, tea.Cmd)
 		if _, exists := m.termViews[sess.ID()]; !exists {
 			tv := terminal.NewTermViewModel(sess.ID(), ptySess.PTY())
 			tv = tv.SetSize(m.termSize())
+			tv = tv.SetPassthrough(m.passthrough)
 			m.termViews[sess.ID()] = tv
 			return m, tv.Init()
 		}
@@ -91,6 +101,25 @@ func (m MainPanelModel) RemoveSessionView(sessionID string) MainPanelModel {
 		m.hasPTY = false
 	}
 	return m
+}
+
+func (m MainPanelModel) ScrollTermView(direction int) (MainPanelModel, tea.Cmd) {
+	if !m.hasPTY || m.activeView == "" {
+		return m, nil
+	}
+	tv, ok := m.termViews[m.activeView]
+	if !ok {
+		return m, nil
+	}
+	_, h := m.termSize()
+	half := h / 2
+	if direction < 0 {
+		tv = tv.ScrollUp(half)
+	} else {
+		tv = tv.ScrollDown(half)
+	}
+	m.termViews[m.activeView] = tv
+	return m, nil
 }
 
 func (m MainPanelModel) Update(msg tea.Msg) (MainPanelModel, tea.Cmd) {

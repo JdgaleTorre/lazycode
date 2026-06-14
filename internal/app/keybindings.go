@@ -25,7 +25,10 @@ type KeyMap struct {
 	PassthroughEscape key.Binding
 	Section1          key.Binding
 	Section2          key.Binding
+	Section3          key.Binding
 	Info              key.Binding
+	Refresh           key.Binding
+	PTYRun            key.Binding
 }
 
 var DefaultKeyMap = KeyMap{
@@ -48,7 +51,10 @@ var DefaultKeyMap = KeyMap{
 	PassthroughEscape: key.NewBinding(key.WithKeys("ctrl+q"), key.WithHelp("ctrl+q", "escape passthrough")),
 	Section1:          key.NewBinding(key.WithKeys("1"), key.WithHelp("1", "jump to sessions")),
 	Section2:          key.NewBinding(key.WithKeys("2"), key.WithHelp("2", "jump to apps")),
+	Section3:          key.NewBinding(key.WithKeys("3"), key.WithHelp("3", "jump to tasks")),
 	Info:              key.NewBinding(key.WithKeys("0"), key.WithHelp("0", "project info")),
+	Refresh:           key.NewBinding(key.WithKeys("r"), key.WithHelp("r", "refresh tasks")),
+	PTYRun:            key.NewBinding(key.WithKeys("p"), key.WithHelp("p", "run task in PTY")),
 }
 
 func (k KeyMap) ImportantBindingGroups() []ui.BindingGroup {
@@ -73,6 +79,12 @@ func (k KeyMap) ImportantBindingGroups() []ui.BindingGroup {
 			},
 		},
 		{
+			Name: "tasks",
+			Bindings: []key.Binding{
+				k.Section3, k.Refresh, k.PTYRun,
+			},
+		},
+		{
 			Name: "general",
 			Bindings: []key.Binding{
 				k.Help, k.Quit,
@@ -87,7 +99,8 @@ func (k KeyMap) NavigationBindings() []key.Binding {
 		k.Up, k.Down, k.Insert, k.Enter, k.NewSession, k.Delete,
 		k.Editor, k.Git, k.Docker,
 		k.Tab, k.PageUp,
-		k.Section1, k.Section2, k.Info,
+		k.Section1, k.Section2, k.Section3, k.Info,
+		k.Refresh, k.PTYRun,
 	}
 }
 

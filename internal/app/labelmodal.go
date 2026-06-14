@@ -10,13 +10,13 @@ import (
 )
 
 type LabelModal struct {
-	visible        bool
-	value          strings.Builder
-	agents         []agent.Agent
-	agentIdx       int
+	visible         bool
+	value           strings.Builder
+	agents          []agent.Agent
+	agentIdx        int
 	defaultAgentIdx int
-	width          int
-	height         int
+	width           int
+	height          int
 }
 
 func NewLabelModal(agents []agent.Agent) *LabelModal {

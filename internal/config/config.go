@@ -14,17 +14,17 @@ type Config struct {
 }
 
 type AgentConfig struct {
-	Enabled  bool   `yaml:"enabled"`
-	Command  string `yaml:"command"`
-	Model    string `yaml:"model,omitempty"`
+	Enabled   bool     `yaml:"enabled"`
+	Command   string   `yaml:"command"`
+	Model     string   `yaml:"model,omitempty"`
 	ExtraArgs []string `yaml:"extra_args,omitempty"`
 }
 
 type SideAppsConfig struct {
-	Editor string        `yaml:"editor"`
-	Git    string        `yaml:"git"`
-	Docker string        `yaml:"docker"`
-	Extra  []ExtraAppDef `yaml:"extra"`
+	Editor string          `yaml:"editor"`
+	Git    string          `yaml:"git"`
+	Docker string          `yaml:"docker"`
+	Extra  []ExtraAppDef   `yaml:"extra"`
 	Enable map[string]bool `yaml:"enable"`
 }
 

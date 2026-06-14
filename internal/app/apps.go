@@ -73,6 +73,11 @@ func (m AppModel) killApp(idx int) (tea.Model, tea.Cmd) {
 // handleTermError reacts to a side app's pty closing (the program exited
 // on its own): clear its slot and fall back to the selected session.
 func (m AppModel) handleTermError(msg terminal.TermErrorMsg) (tea.Model, tea.Cmd) {
+	if updated, handled := m.handleTaskTermError(msg); handled {
+		m = updated
+		return m.syncSidebar(), nil
+	}
+
 	for i := range m.apps {
 		if m.apps[i].Sess == nil || m.apps[i].Sess.ID() != msg.ID {
 			continue

@@ -9,6 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/josegale/lazycode/internal/agent"
 	"github.com/josegale/lazycode/internal/config"
+	"github.com/josegale/lazycode/internal/task"
 	"github.com/josegale/lazycode/internal/terminal"
 	"github.com/josegale/lazycode/internal/ui"
 )
@@ -19,16 +20,18 @@ type AppModel struct {
 	mode   InputMode
 	focus  ui.FocusPanel
 
-	agents   []agent.Agent
-	sessions []agent.Session
+	agents    []agent.Agent
+	sessions  []agent.Session
 	activeIdx int
 
 	apps      []SideApp
+	tasks     []TaskRun
 	cursorSec ui.SidebarSection
 	cursorIdx int
 	// activeApp is the index of the app shown in the main panel;
 	// -1 means a session (activeIdx) is shown instead.
-	activeApp int
+	activeApp  int
+	activeTask int
 
 	projName   string
 	gitBranch  string
@@ -59,28 +62,36 @@ func New(cfg *config.Config) AppModel {
 		state.Save()
 	}
 
+	scannedTasks := task.ScanTasks(wd)
+	taskRuns := make([]TaskRun, len(scannedTasks))
+	for i, t := range scannedTasks {
+		taskRuns[i] = TaskRun{Task: t, Status: ui.TaskPending}
+	}
+
 	m := AppModel{
-		config:     cfg,
-		keys:       DefaultKeyMap,
-		mode:       ModeNavigation,
-		focus:      ui.FocusSidebar,
-		agents:     available,
-		sessions:   nil,
-		activeIdx:  -1,
-		apps:       buildSideApps(cfg),
-		cursorSec:  ui.SectionProjectInfo,
-		cursorIdx:  0,
-		activeApp:  -1,
-		projName:   projName,
-		gitBranch:  gitBranch,
-		projectDir: wd,
-		showInfo:   true,
-		layout:     ui.NewLayoutModel(cfg),
-		status:     ui.NewStatusBarModel(),
-		help:       ui.NewHelpModel(DefaultKeyMap.NavigationBindings()),
-		labelModal: NewLabelModal(available),
+		config:       cfg,
+		keys:         DefaultKeyMap,
+		mode:         ModeNavigation,
+		focus:        ui.FocusSidebar,
+		agents:       available,
+		sessions:     nil,
+		activeIdx:    -1,
+		apps:         buildSideApps(cfg),
+		tasks:        taskRuns,
+		cursorSec:    ui.SectionProjectInfo,
+		cursorIdx:    0,
+		activeApp:    -1,
+		activeTask:   -1,
+		projName:     projName,
+		gitBranch:    gitBranch,
+		projectDir:   wd,
+		showInfo:     true,
+		layout:       ui.NewLayoutModel(cfg),
+		status:       ui.NewStatusBarModel(),
+		help:         ui.NewHelpModel(DefaultKeyMap.NavigationBindings()),
+		labelModal:   NewLabelModal(available),
 		projectModal: ui.NewProjectModal(),
-		state:      state,
+		state:        state,
 	}
 	m.layout = m.layout.SetKeyBindingGroups(DefaultKeyMap.ImportantBindingGroups())
 	m.layout = m.layout.SetProjectName(projName)
@@ -103,7 +114,7 @@ func (m AppModel) enterPassthrough() AppModel {
 func (m AppModel) exitToNavigation() AppModel {
 	m.mode = ModeNavigation
 	m.status = m.status.SetMode("NORMAL")
-	m.status = m.status.SetHints(" n: new session  ctrl+e: editor  ctrl+g: lazygit  ctrl+d: lazydocker  q: quit")
+	m.status = m.status.SetHints(" n: new session  ctrl+e: editor  ctrl+g: lazygit  3: tasks  q: quit")
 	m.help = m.help.SetBindings(m.keys.NavigationBindings())
 	m.layout = m.layout.SetPassthrough(false)
 	return m
@@ -130,6 +141,20 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case terminal.TermErrorMsg:
 		return m.handleTermError(msg)
+
+	case TaskDoneMsg:
+		if msg.Idx >= 0 && msg.Idx < len(m.tasks) {
+			if msg.ExitCode == 0 {
+				m.tasks[msg.Idx].Status = ui.TaskCompleted
+			} else {
+				m.tasks[msg.Idx].Status = ui.TaskFailed
+			}
+			if m.activeTask == msg.Idx {
+				tv := m.buildTaskView(msg.Idx)
+				m.layout = m.layout.SetTaskView(&tv)
+			}
+		}
+		return m.syncSidebar(), nil
 
 	case SessionLabelConfirmMsg:
 		ag := m.agents[msg.AgentIdx]
@@ -201,6 +226,14 @@ func (m AppModel) updateNavigationMode(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		for _, a := range m.apps {
 			if a.Sess != nil {
 				a.Sess.Close()
+			}
+		}
+		for i := range m.tasks {
+			if m.tasks[i].Sess != nil {
+				m.tasks[i].Sess.Close()
+			}
+			if m.tasks[i].cmd != nil && m.tasks[i].cmd.Process != nil {
+				m.tasks[i].cmd.Process.Kill()
 			}
 		}
 		return m, tea.Quit
@@ -284,6 +317,8 @@ func (m AppModel) updateNavigationMode(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, removeCmd
 		case ui.SectionApps:
 			return m.killApp(m.cursorIdx)
+		case ui.SectionTasks:
+			return m.killTask(m.cursorIdx)
 		}
 		return m, nil
 
@@ -318,6 +353,26 @@ func (m AppModel) updateNavigationMode(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.cursorIdx = 0
 		return m.syncSidebar(), nil
 
+	case msg.String() == "3":
+		m.focus = ui.FocusSidebar
+		m.layout = m.layout.SetFocus(ui.FocusSidebar)
+		m.cursorSec = ui.SectionTasks
+		m.cursorIdx = 0
+		return m.syncSidebar(), nil
+
+	case msg.String() == "r":
+		if m.cursorSec == ui.SectionTasks {
+			m = m.refreshTasks()
+			return m.syncSidebar(), nil
+		}
+		return m, nil
+
+	case msg.String() == "p":
+		if m.cursorSec == ui.SectionTasks {
+			return m.activateTask(m.cursorIdx, true)
+		}
+		return m, nil
+
 	case key.Matches(msg, m.keys.PageUp):
 		var scrollCmd tea.Cmd
 		m.layout, scrollCmd = m.layout.ScrollMainPanel(-1)
@@ -346,11 +401,30 @@ func (m AppModel) switchProject(dir string) (tea.Model, tea.Cmd) {
 	}
 	m.activeApp = -1
 
+	for i := range m.tasks {
+		if m.tasks[i].Sess != nil {
+			m.layout = m.layout.RemoveSessionView(m.tasks[i].Sess.ID())
+			m.tasks[i].Sess.Close()
+			m.tasks[i].Sess = nil
+		}
+		if m.tasks[i].cmd != nil && m.tasks[i].cmd.Process != nil {
+			m.tasks[i].cmd.Process.Kill()
+		}
+	}
+	m.activeTask = -1
+	m.layout = m.layout.ClearTaskView()
+
 	os.Chdir(dir)
 	m.projectDir = dir
 	m.projName, m.gitBranch = readProjectInfo(dir)
 	m.state.RecordProject(dir)
 	m.state.Save()
+
+	scanned := task.ScanTasks(dir)
+	m.tasks = make([]TaskRun, len(scanned))
+	for i, t := range scanned {
+		m.tasks[i] = TaskRun{Task: t, Status: ui.TaskPending}
+	}
 
 	m.showInfo = true
 	m.layout = m.layout.ShowInfo(true)

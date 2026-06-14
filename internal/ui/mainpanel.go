@@ -21,6 +21,7 @@ type MainPanelModel struct {
 	showInfo    bool
 	infoText    string
 	projectInfo ProjectInfoModel
+	taskView    *TaskViewModel
 }
 
 func NewMainPanelModel() MainPanelModel {
@@ -200,6 +201,8 @@ func (m MainPanelModel) View() string {
 		inner = m.renderInfoText()
 	} else if m.showInfo {
 		inner = m.projectInfo.View()
+	} else if m.taskView != nil {
+		inner = m.taskView.View()
 	} else if m.hasPTY && m.activeView != "" {
 		if tv, ok := m.termViews[m.activeView]; ok {
 			inner = tv.View()
@@ -225,6 +228,18 @@ func (m MainPanelModel) View() string {
 		Height(m.height - 2).
 		MaxHeight(m.height).
 		Render(inner)
+}
+
+func (m MainPanelModel) SetTaskView(tv *TaskViewModel) MainPanelModel {
+	m.taskView = tv
+	m.showInfo = false
+	m.infoText = ""
+	return m
+}
+
+func (m MainPanelModel) ClearTaskView() MainPanelModel {
+	m.taskView = nil
+	return m
 }
 
 func (m MainPanelModel) renderInfoText() string {

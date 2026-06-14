@@ -16,6 +16,9 @@ func (m AppModel) activeSession() agent.Session {
 // displayedSession is whatever the main panel currently shows: an app's
 // session when one is active, the selected agent session otherwise.
 func (m AppModel) displayedSession() agent.Session {
+	if m.activeTask >= 0 && m.activeTask < len(m.tasks) && m.tasks[m.activeTask].IsPTY {
+		return m.tasks[m.activeTask].Sess
+	}
 	if m.activeApp >= 0 && m.activeApp < len(m.apps) {
 		return m.apps[m.activeApp].Sess
 	}

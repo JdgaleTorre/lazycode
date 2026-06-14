@@ -46,9 +46,9 @@ type AgentEvent struct {
 }
 
 type ToolUse struct {
-	ID    string
-	Name  string
-	Input string
+	ID     string
+	Name   string
+	Input  string
 	Output string
 }
 

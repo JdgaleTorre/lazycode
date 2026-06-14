@@ -7,6 +7,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const maxRecentProjects = 50
+
 type State struct {
 	RecentProjects []string `yaml:"recent_projects"`
 }
@@ -56,7 +58,7 @@ func (s *State) RecordProject(dir string) {
 		}
 	}
 	s.RecentProjects = append([]string{dir}, filtered...)
-	if len(s.RecentProjects) > 50 {
-		s.RecentProjects = s.RecentProjects[:50]
+	if len(s.RecentProjects) > maxRecentProjects {
+		s.RecentProjects = s.RecentProjects[:maxRecentProjects]
 	}
 }

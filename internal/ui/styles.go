@@ -2,6 +2,8 @@ package ui
 
 import "github.com/charmbracelet/lipgloss"
 
+const ModalWidth = 44
+
 var (
 	ColorPrimary   = lipgloss.Color("#7C3AED")
 	ColorSecondary = lipgloss.Color("#A78BFA")

@@ -13,6 +13,12 @@ import (
 	"github.com/creack/pty"
 )
 
+const (
+	defaultTermWidth  = 80
+	defaultTermHeight = 24
+	ptyReadBufSize    = 32 * 1024
+)
+
 var (
 	scrollTrackColor = lipgloss.Color("#374151")
 	scrollThumbColor = lipgloss.Color("#7C3AED")
@@ -46,7 +52,7 @@ type TermViewModel struct {
 }
 
 func NewTermViewModel(id string, ptyFile *os.File) TermViewModel {
-	emu := vt.NewEmulator(80, 24)
+	emu := vt.NewEmulator(defaultTermWidth, defaultTermHeight)
 	cs := &cursorState{}
 	emu.SetCallbacks(vt.Callbacks{
 		CursorVisibility: func(visible bool) {
@@ -80,7 +86,7 @@ func (m TermViewModel) SetPassthrough(b bool) TermViewModel {
 func (m TermViewModel) readCmd() tea.Cmd {
 	ptyFile, id := m.pty, m.id
 	return func() tea.Msg {
-		buf := make([]byte, 32*1024)
+		buf := make([]byte, ptyReadBufSize)
 		n, err := ptyFile.Read(buf)
 		if n > 0 {
 			data := make([]byte, n)

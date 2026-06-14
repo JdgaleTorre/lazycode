@@ -8,6 +8,8 @@ import (
 	"github.com/creack/pty"
 )
 
+const gracefulCloseTimeout = 3 * time.Second
+
 type PTYHandle struct {
 	F   *os.File
 	Cmd *exec.Cmd
@@ -45,7 +47,7 @@ func (h *PTYHandle) GracefulClose(input string) error {
 	}()
 	select {
 	case <-done:
-	case <-time.After(3 * time.Second):
+	case <-time.After(gracefulCloseTimeout):
 		if h.Cmd.Process != nil {
 			h.Cmd.Process.Kill()
 		}

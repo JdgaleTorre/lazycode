@@ -12,13 +12,6 @@ const (
 	ModePassthrough
 )
 
-type FocusPanel int
-
-const (
-	FocusSidebar FocusPanel = iota
-	FocusMain
-)
-
 type AgentEventMsg struct {
 	SessionID string
 	Event     agent.AgentEvent

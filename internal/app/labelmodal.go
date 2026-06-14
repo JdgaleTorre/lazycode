@@ -133,7 +133,7 @@ func (m *LabelModal) View() string {
 	)
 
 	box := ui.BorderFocused.
-		Width(44).
+		Width(ui.ModalWidth).
 		Padding(1, 2).
 		Render(content)
 

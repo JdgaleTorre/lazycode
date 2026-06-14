@@ -19,8 +19,9 @@ const (
 )
 
 type AppItem struct {
-	Name    string
-	Running bool
+	Name      string
+	Running   bool
+	Installed bool
 }
 
 type SidebarData struct {
@@ -151,6 +152,15 @@ func (m SidebarModel) View() string {
 		appLines = append(appLines, MutedStyle.Render("None configured."))
 	} else {
 		for i, app := range m.data.Apps {
+			if !app.Installed {
+				lineStyle := MutedStyle
+				prefix := "  "
+				if m.data.CursorSection == SectionApps && i == m.data.CursorIdx {
+					prefix = "▸ "
+				}
+				appLines = append(appLines, prefix+lineStyle.Render("!"+app.Name))
+				continue
+			}
 			lineStyle := lipgloss.NewStyle().Foreground(ColorText)
 			if m.data.CursorSection == SectionApps && i == m.data.CursorIdx {
 				lineStyle = lineStyle.Foreground(ColorPrimary).Bold(true)

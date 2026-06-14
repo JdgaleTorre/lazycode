@@ -50,11 +50,21 @@ agents:
 side_apps:
   editor: nvim .
   git: lazygit
+  docker: lazydocker
+  extra:
+    - name: monitor
+      command: btop
+  enable:
+    docker: false
 ui:
   sidebar_width: 30
   show_cost: true
   show_tokens: true
 ```
+
+**Side apps** — three built-in: `editor` (nvim), `git` (lazygit), `docker` (lazydocker).  
+Add custom apps under `extra`. Apps with `enable: false` are hidden.  
+Uninstalled apps show `!` in the sidebar; pressing Enter shows install instructions.
 
 ## Keybindings
 
@@ -65,8 +75,9 @@ ui:
 | `i` or `Enter` | Start / focus session |
 | `n` | New session |
 | `d` | Delete session |
-| `e` | Launch editor |
-| `g` | Launch lazygit |
+| `Ctrl+E` | Launch editor (nvim) |
+| `Ctrl+G` | Launch lazygit |
+| `Ctrl+D` | Launch lazydocker |
 | `Ctrl+Q` | Exit passthrough mode |
 | `?` | Toggle help |
 | `q` | Quit |

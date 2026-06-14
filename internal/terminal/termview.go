@@ -129,9 +129,9 @@ func (m TermViewModel) Update(msg tea.Msg) (TermViewModel, tea.Cmd) {
 	case tea.KeyMsg:
 		if !m.emu.IsAltScreen() {
 			switch msg.Type {
-			case tea.KeyCtrlU:
+			case tea.KeyCtrlK:
 				return m.ScrollUp(m.height / 2), nil
-			case tea.KeyCtrlD:
+			case tea.KeyCtrlJ:
 				return m.ScrollDown(m.height / 2), nil
 			}
 			if m.scrollOffset > 0 {

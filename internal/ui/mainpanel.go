@@ -19,6 +19,7 @@ type MainPanelModel struct {
 	activeSess  agent.Session
 	passthrough bool
 	showInfo    bool
+	infoText    string
 	projectInfo ProjectInfoModel
 }
 
@@ -65,6 +66,20 @@ func (m MainPanelModel) SetPassthrough(b bool) MainPanelModel {
 
 func (m MainPanelModel) ShowInfo(show bool) MainPanelModel {
 	m.showInfo = show
+	if show {
+		m.infoText = ""
+	}
+	return m
+}
+
+func (m MainPanelModel) SetInfoText(text string) MainPanelModel {
+	m.infoText = text
+	m.showInfo = false
+	return m
+}
+
+func (m MainPanelModel) ClearInfoText() MainPanelModel {
+	m.infoText = ""
 	return m
 }
 
@@ -80,6 +95,7 @@ func (m MainPanelModel) SetProjectName(name string) MainPanelModel {
 
 func (m MainPanelModel) SetSession(sess agent.Session) (MainPanelModel, tea.Cmd) {
 	m.showInfo = false
+	m.infoText = ""
 	m.activeSess = sess
 	if sess == nil {
 		m.hasPTY = false
@@ -180,7 +196,9 @@ func (m MainPanelModel) View() string {
 
 	var inner string
 
-	if m.showInfo {
+	if m.infoText != "" {
+		inner = m.renderInfoText()
+	} else if m.showInfo {
 		inner = m.projectInfo.View()
 	} else if m.hasPTY && m.activeView != "" {
 		if tv, ok := m.termViews[m.activeView]; ok {
@@ -207,4 +225,16 @@ func (m MainPanelModel) View() string {
 		Height(m.height - 2).
 		MaxHeight(m.height).
 		Render(inner)
+}
+
+func (m MainPanelModel) renderInfoText() string {
+	w, h := m.termSize()
+	if w <= 0 || h <= 0 {
+		return ""
+	}
+	style := lipgloss.NewStyle().Foreground(ColorText).Width(w).Align(lipgloss.Center)
+	title := TitleStyle.Render("App Not Installed")
+	body := style.Render(m.infoText)
+	content := lipgloss.JoinVertical(lipgloss.Center, title, "", body)
+	return lipgloss.Place(w, h, lipgloss.Center, lipgloss.Center, content)
 }

@@ -21,8 +21,16 @@ type AgentConfig struct {
 }
 
 type SideAppsConfig struct {
-	Editor string `yaml:"editor"`
-	Git    string `yaml:"git"`
+	Editor string        `yaml:"editor"`
+	Git    string        `yaml:"git"`
+	Docker string        `yaml:"docker"`
+	Extra  []ExtraAppDef `yaml:"extra"`
+	Enable map[string]bool `yaml:"enable"`
+}
+
+type ExtraAppDef struct {
+	Name    string `yaml:"name"`
+	Command string `yaml:"command"`
 }
 
 type UIConfig struct {

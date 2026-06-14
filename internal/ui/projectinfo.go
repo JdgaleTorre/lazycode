@@ -50,9 +50,9 @@ func (m ProjectInfoModel) View() string {
 		Foreground(ColorSecondary).
 		Render("https://github.com/josegale/lazycode")
 
-	kbContent := m.renderKeybindings()
+	configHint := MutedStyle.Render("Configure apps at ~/.config/lazycode/config.yaml")
 
-	//hint := MutedStyle.Render("Press 0 to close")
+	kbContent := m.renderKeybindings()
 
 	info := lipgloss.JoinVertical(
 		lipgloss.Center,
@@ -60,9 +60,9 @@ func (m ProjectInfoModel) View() string {
 		"",
 		githubURL,
 		"",
-		kbContent,
+		configHint,
 		"",
-		//hint,
+		kbContent,
 	)
 
 	return lipgloss.Place(m.width, m.height,

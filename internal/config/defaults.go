@@ -23,6 +23,8 @@ func DefaultConfig() *Config {
 		SideApps: SideAppsConfig{
 			Editor: "nvim .",
 			Git:    "lazygit",
+			Docker: "lazydocker",
+			Enable: map[string]bool{},
 		},
 		UI: UIConfig{
 			SidebarWidth: 30,

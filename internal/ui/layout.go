@@ -82,6 +82,16 @@ func (m LayoutModel) ShowInfo(show bool) LayoutModel {
 	return m
 }
 
+func (m LayoutModel) SetInfoText(text string) LayoutModel {
+	m.mainPanel = m.mainPanel.SetInfoText(text)
+	return m
+}
+
+func (m LayoutModel) ClearInfoText() LayoutModel {
+	m.mainPanel = m.mainPanel.ClearInfoText()
+	return m
+}
+
 func (m LayoutModel) SetKeyBindingGroups(groups []BindingGroup) LayoutModel {
 	m.mainPanel = m.mainPanel.SetKeyBindingGroups(groups)
 	return m

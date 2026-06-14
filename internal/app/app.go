@@ -124,7 +124,7 @@ func (m AppModel) sectionLen(s ui.SidebarSection) int {
 func (m AppModel) appItems() []ui.AppItem {
 	items := make([]ui.AppItem, len(m.apps))
 	for i, a := range m.apps {
-		items[i] = ui.AppItem{Name: a.Name, Running: a.Running()}
+		items[i] = ui.AppItem{Name: a.Name, Running: a.Running(), Installed: a.Installed}
 	}
 	return items
 }
@@ -169,7 +169,7 @@ func (m AppModel) syncSidebar() AppModel {
 func (m AppModel) enterPassthrough() AppModel {
 	m.mode = ModePassthrough
 	m.status = m.status.SetMode("PASSTHROUGH")
-	m.status = m.status.SetHints(" ctrl+u/d: scroll  ctrl+q: exit")
+	m.status = m.status.SetHints(" ctrl+j/k: scroll  ctrl+q: exit")
 	m.help = m.help.SetBindings(m.keys.PassthroughBindings())
 	m.layout = m.layout.SetPassthrough(true)
 	return m
@@ -178,7 +178,7 @@ func (m AppModel) enterPassthrough() AppModel {
 func (m AppModel) exitToNavigation() AppModel {
 	m.mode = ModeNavigation
 	m.status = m.status.SetMode("NORMAL")
-	m.status = m.status.SetHints(" n: new session  e: editor  g: lazygit  q: quit")
+	m.status = m.status.SetHints(" n: new session  ctrl+e: editor  ctrl+g: lazygit  ctrl+d: lazydocker  q: quit")
 	m.help = m.help.SetBindings(m.keys.NavigationBindings())
 	m.layout = m.layout.SetPassthrough(false)
 	return m
@@ -426,12 +426,12 @@ func (m AppModel) updateNavigationMode(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.layout = m.layout.ShowInfo(true)
 		return m.syncSidebar(), nil
 
-	case msg.String() == "h":
+	case key.Matches(msg, m.keys.FocusLeft):
 		m.focus = FocusSidebar
 		m.layout = m.layout.SetFocus(ui.FocusSidebar)
 		return m, nil
 
-	case msg.String() == "l":
+	case key.Matches(msg, m.keys.FocusRight):
 		m.focus = FocusMain
 		m.layout = m.layout.SetFocus(ui.FocusMain)
 		return m, nil
@@ -446,7 +446,7 @@ func (m AppModel) updateNavigationMode(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
-	case msg.String() == "j":
+	case key.Matches(msg, m.keys.Down):
 		if m.focus == FocusSidebar {
 			var moveCmd tea.Cmd
 			m, moveCmd = m.moveCursor(1)
@@ -454,7 +454,7 @@ func (m AppModel) updateNavigationMode(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
-	case msg.String() == "k":
+	case key.Matches(msg, m.keys.Up):
 		if m.focus == FocusSidebar {
 			var moveCmd tea.Cmd
 			m, moveCmd = m.moveCursor(-1)
@@ -468,11 +468,14 @@ func (m AppModel) updateNavigationMode(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
-	case msg.String() == "e":
+	case msg.String() == "ctrl+e":
 		return m.activateAppByName("editor")
 
-	case msg.String() == "g":
+	case msg.String() == "ctrl+g":
 		return m.activateAppByName("git")
+
+	case msg.String() == "ctrl+d":
+		return m.activateAppByName("docker")
 
 	case msg.String() == "n":
 		if len(m.agents) == 0 {
@@ -527,11 +530,6 @@ func (m AppModel) updateNavigationMode(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		var scrollCmd tea.Cmd
 		m.layout, scrollCmd = m.layout.ScrollMainPanel(-1)
 		return m, scrollCmd
-
-	case key.Matches(msg, m.keys.PageDown):
-		var scrollCmd tea.Cmd
-		m.layout, scrollCmd = m.layout.ScrollMainPanel(1)
-		return m, scrollCmd
 	}
 
 	var cmd tea.Cmd
@@ -573,6 +571,13 @@ func (m AppModel) activateCursor() (tea.Model, tea.Cmd) {
 func (m AppModel) activateApp(idx int) (tea.Model, tea.Cmd) {
 	if idx < 0 || idx >= len(m.apps) {
 		return m, nil
+	}
+	if !m.apps[idx].Installed {
+		m.activeApp = idx
+		m.layout = m.layout.SetInfoText(installHint(m.apps[idx].Name, m.apps[idx].Cmd))
+		m.focus = FocusMain
+		m.layout = m.layout.SetFocus(ui.FocusMain)
+		return m.syncSidebar(), nil
 	}
 	if !m.apps[idx].Running() {
 		sess, err := startSideApp(m.apps[idx], m.projectDir)

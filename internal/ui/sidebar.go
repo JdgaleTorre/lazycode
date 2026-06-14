@@ -6,8 +6,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/josegale/lazycode/internal/agent"
 	"github.com/charmbracelet/x/ansi"
+	"github.com/josegale/lazycode/internal/agent"
 )
 
 type SidebarSection int
@@ -16,6 +16,7 @@ const (
 	SectionProjectInfo SidebarSection = iota
 	SectionSessions
 	SectionApps
+	SectionTasks
 )
 
 type AppItem struct {
@@ -24,11 +25,28 @@ type AppItem struct {
 	Installed bool
 }
 
+type TaskStatus int
+
+const (
+	TaskPending TaskStatus = iota
+	TaskRunning
+	TaskCompleted
+	TaskFailed
+)
+
+type TaskItem struct {
+	Name      string
+	Source    string
+	Status    TaskStatus
+	Preferred bool
+}
+
 type SidebarData struct {
 	ProjectName string
 	Branch      string
-	Sessions []agent.Session
-	Apps     []AppItem
+	Sessions    []agent.Session
+	Apps        []AppItem
+	Tasks       []TaskItem
 	// Cursor position: which section it is in and the item index within it.
 	CursorSection SidebarSection
 	CursorIdx     int
@@ -81,7 +99,7 @@ func (m SidebarModel) renderSectionBox(number int, title string, lines []string,
 	style := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(borderColor).
-		Width(m.width - 2).
+		Width(m.width-2).
 		Padding(0, 1)
 
 	inner := strings.Join(lines, "\n")
@@ -191,8 +209,58 @@ func (m SidebarModel) View() string {
 	}
 	appsBox := m.renderSectionBox(2, "Apps", appLines, m.data.CursorSection == SectionApps)
 
+	// Tasks section
+	var tasksBox string
+	if tn := len(m.data.Tasks); tn > 0 {
+		const maxVisTasks = 5
+		taskLines := make([]string, maxVisTasks)
+		tStart := 0
+		if tn > maxVisTasks {
+			tStart = m.data.CursorIdx - maxVisTasks/2
+			if tStart < 0 {
+				tStart = 0
+			}
+			if tStart+maxVisTasks > tn {
+				tStart = tn - maxVisTasks
+			}
+		}
+		for i := 0; i < maxVisTasks; i++ {
+			tidx := tStart + i
+			if tidx >= tn {
+				taskLines[i] = ""
+				continue
+			}
+			t := m.data.Tasks[tidx]
+			cursorHere := m.data.CursorSection == SectionTasks && m.data.CursorIdx == tidx
+			lineStyle := lipgloss.NewStyle().Foreground(ColorText)
+			if cursorHere {
+				lineStyle = lineStyle.Foreground(ColorPrimary).Bold(true)
+			}
+			badge := ""
+			switch t.Status {
+			case TaskRunning:
+				badge = RunningStyle.Render(" ●")
+			case TaskCompleted:
+				badge = lipgloss.NewStyle().Foreground(ColorInsert).Render(" ✓")
+			case TaskFailed:
+				badge = lipgloss.NewStyle().Foreground(ColorError).Render(" ✗")
+			}
+			var prefix string
+			if t.Preferred {
+				prefix = lipgloss.NewStyle().Foreground(ColorPrimary).Render("★ ") + MutedStyle.Render(t.Source+": ")
+			} else {
+				prefix = MutedStyle.Render(t.Source + ": ")
+			}
+			taskLines[i] = m.cursorPrefix(SectionTasks, tidx) + prefix + lineStyle.Render(t.Name) + badge
+		}
+		tasksBox = m.renderSectionBox(3, "Tasks", taskLines, m.data.CursorSection == SectionTasks)
+	} else {
+		taskLines := []string{MutedStyle.Render("No tasks found.")}
+		tasksBox = m.renderSectionBox(3, "Tasks", taskLines, m.data.CursorSection == SectionTasks)
+	}
+
 	// Join all boxes vertically
-	result := lipgloss.JoinVertical(lipgloss.Left, projectBox, sessionsBox, appsBox)
+	result := lipgloss.JoinVertical(lipgloss.Left, projectBox, sessionsBox, appsBox, tasksBox)
 
 	// Clip to height
 	resultLines := strings.Split(result, "\n")

@@ -23,9 +23,9 @@ func (a SideApp) Running() bool {
 }
 
 type appDef struct {
-	Name    string
-	Cmd     string
-	Known   bool
+	Name  string
+	Cmd   string
+	Known bool
 }
 
 var knownApps = map[string]appDef{
@@ -82,8 +82,8 @@ func buildSideApps(cfg *config.Config) []SideApp {
 
 func installHint(name, cmd string) string {
 	urls := map[string]string{
-		"nvim":      "https://neovim.io/",
-		"lazygit":   "https://github.com/jesseduffield/lazygit",
+		"nvim":       "https://neovim.io/",
+		"lazygit":    "https://github.com/jesseduffield/lazygit",
 		"lazydocker": "https://github.com/jesseduffield/lazydocker",
 	}
 

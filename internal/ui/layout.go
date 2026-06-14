@@ -102,6 +102,20 @@ func (m LayoutModel) SetProjectName(name string) LayoutModel {
 	return m
 }
 
+func (m LayoutModel) MainPanelTermSize() (int, int) {
+	return m.mainPanel.termSize()
+}
+
+func (m LayoutModel) SetTaskView(tv *TaskViewModel) LayoutModel {
+	m.mainPanel = m.mainPanel.SetTaskView(tv)
+	return m
+}
+
+func (m LayoutModel) ClearTaskView() LayoutModel {
+	m.mainPanel = m.mainPanel.ClearTaskView()
+	return m
+}
+
 func (m LayoutModel) ScrollMainPanel(direction int) (LayoutModel, tea.Cmd) {
 	mp, cmd := m.mainPanel.ScrollTermView(direction)
 	m.mainPanel = mp

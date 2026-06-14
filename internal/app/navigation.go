@@ -6,7 +6,7 @@ import (
 	"github.com/josegale/lazycode/internal/ui"
 )
 
-var sectionOrder = []ui.SidebarSection{ui.SectionProjectInfo, ui.SectionSessions, ui.SectionApps}
+var sectionOrder = []ui.SidebarSection{ui.SectionProjectInfo, ui.SectionSessions, ui.SectionApps, ui.SectionTasks}
 
 func (m AppModel) sectionLen(s ui.SidebarSection) int {
 	switch s {
@@ -16,6 +16,8 @@ func (m AppModel) sectionLen(s ui.SidebarSection) int {
 		return len(m.sessions)
 	case ui.SectionApps:
 		return len(m.apps)
+	case ui.SectionTasks:
+		return len(m.tasks)
 	}
 	return 0
 }
@@ -34,6 +36,7 @@ func (m AppModel) sidebarData() ui.SidebarData {
 		Branch:        m.gitBranch,
 		Sessions:      m.sessions,
 		Apps:          m.appItems(),
+		Tasks:         m.taskItems(),
 		CursorSection: m.cursorSec,
 		CursorIdx:     m.cursorIdx,
 	}
@@ -61,6 +64,9 @@ func (m AppModel) syncSidebar() AppModel {
 		m.cursorIdx = 0
 	}
 	m.layout = m.layout.SetSidebar(m.sidebarData())
+	if m.mode == ModeNavigation {
+		m.status = m.status.SetHints(m.navigationHints())
+	}
 	return m
 }
 
@@ -155,6 +161,9 @@ func (m AppModel) activateCursor() (tea.Model, tea.Cmd) {
 
 	case ui.SectionApps:
 		return m.activateApp(m.cursorIdx)
+
+	case ui.SectionTasks:
+		return m.activateTask(m.cursorIdx, false)
 	}
 	return m, nil
 }

@@ -22,7 +22,7 @@ type ProjectInfoModel struct {
 
 func NewProjectInfoModel() ProjectInfoModel {
 	return ProjectInfoModel{
-		bannerText: figure.NewFigure("LAZYCODE", "", true).String(),
+		bannerText: figure.NewFigure("ONERING", "", true).String(),
 	}
 }
 
@@ -48,15 +48,19 @@ func (m ProjectInfoModel) View() string {
 
 	githubURL := lipgloss.NewStyle().
 		Foreground(ColorSecondary).
-		Render("https://github.com/josegale/lazycode")
+		Render("https://github.com/josegale/onering")
 
-	configHint := MutedStyle.Render("Configure apps at ~/.config/lazycode/config.yaml")
+	configHint := MutedStyle.Render("Configure apps at ~/.config/onering/config.yaml")
 
 	kbContent := m.renderKeybindings()
+
+	tagline := MutedStyle.Render("one TUI to wrangle them all")
 
 	info := lipgloss.JoinVertical(
 		lipgloss.Center,
 		bannerStyled,
+		"",
+		tagline,
 		"",
 		githubURL,
 		"",

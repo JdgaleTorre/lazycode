@@ -2,7 +2,7 @@ package app
 
 import (
 	"github.com/charmbracelet/bubbles/key"
-	"github.com/josegale/lazycode/internal/ui"
+	"github.com/josegale/onering/internal/ui"
 )
 
 type KeyMap struct {

@@ -7,11 +7,11 @@ import (
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/josegale/lazycode/internal/agent"
-	"github.com/josegale/lazycode/internal/config"
-	"github.com/josegale/lazycode/internal/task"
-	"github.com/josegale/lazycode/internal/terminal"
-	"github.com/josegale/lazycode/internal/ui"
+	"github.com/josegale/onering/internal/agent"
+	"github.com/josegale/onering/internal/config"
+	"github.com/josegale/onering/internal/task"
+	"github.com/josegale/onering/internal/terminal"
+	"github.com/josegale/onering/internal/ui"
 )
 
 type AppModel struct {
